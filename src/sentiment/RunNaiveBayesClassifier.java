@@ -12,7 +12,7 @@ import de.daslaboratorium.machinelearning.classifier.*;
 
 /**
  * 
- * @author Qudsia
+ * @author Qudsia & Grace
  *
  */
 public class RunNaiveBayesClassifier {
