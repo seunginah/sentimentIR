@@ -1,5 +1,8 @@
 from pprint import pprint # pretty printer
 import gensim as gs
+from topics import LatentTopic
+from parsers import ParseDocs, ParsePolarDocs
+
 
 # tutorial sample documents
 docs = ["Human machine interface for lab abc computer applications",
@@ -12,11 +15,21 @@ docs = ["Human machine interface for lab abc computer applications",
               "Graph minors IV Widths of trees and well quasi ordering",
               "Graph minors A survey"]
 
+# parse polar docs
+# parser = ParsePolarDocs('reviews_1000.txt')
+# parser.parse()
+# docs = parser.posdocs
+
+# parse regular docs
+parser = ParseDocs('reviews_1000.txt')
+parser.parse()
+docs = parser.docs
+topwords = parser.topwords
 
 # stoplist removal, tokenization
-stoplist = set('for a of the and to in'.split())
+stoplist = set('for a of the and to in his her he she they it them that are have as were'.split())
 # for each document: lowercase document, split by whitespace, and add all its words not in stoplist to texts
-texts = [[word for word in doc.lower().split() if word not in stoplist] for doc in docs]
+texts = [[word for word in doc.lower().split() if word not in topwords] for doc in docs]
 
 
 # create dict
@@ -29,7 +42,17 @@ tfidf = gs.models.TfidfModel(corpus)
 corpus_tfidf = tfidf[corpus]
 
 # latent semantic indexing with 10 topics
-lsi = gs.models.LsiModel(corpus_tfidf, id2word=dict, num_topics =10)
-
+topics = []
+lsi = gs.models.LsiModel(corpus_tfidf, id2word=dict, num_topics =2)
 for i in lsi.print_topics():
-	print i
+	print '\n\n',i
+	topics.append(i)
+
+print 'topics: ', len(topics)
+
+for j in topics:
+	print len(j)
+
+lt = LatentTopic(topics)
+lt.buildDict()
+lt.printDict()
