@@ -6,8 +6,8 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 
-		//ReviewsReader rr = new ReviewsReader();
-		//rr.readReviewDataFiles();
+		ReviewsReader rr = new ReviewsReader();
+		rr.readReviewDataFiles();
 
 	}
 
