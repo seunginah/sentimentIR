@@ -45,35 +45,42 @@ THE SOFTWARE.
  */
 public class RunNaiveBayesClassifier {
 
-	private static ArrayList<String> MostFrequentWords = new ArrayList<String>();
-	public final static Classifier<String, String> bayes = new BayesClassifier<String, String>();
-
-	//private static final String INPUT_FILE_NAME = "movie.reviews";
-	//private static final String INPUT_FILE_NAME = "movie.reviews.tagged";
-	//private static final String INPUT_FILE_NAME = "movie.reviews.negated";
-
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionary1000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionary2000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionary3000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionary4000.txt";
-	private static final String DICTIONARY_FILE_NAME = "smallerdictionary5000.txt";
-
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarywithoutNE1000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarywithoutNE2000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarywithoutNE3000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarywithoutNE4000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarywithoutNE5000.txt";
-
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarynegated1000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarynegated2000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarynegated3000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarynegated4000.txt";
-	//private static final String DICTIONARY_FILE_NAME = "smallerdictionarynegated5000.txt";
+	private static ArrayList<String> mostFrequentWords;// = new ArrayList<String>();
+	public static Classifier<String, String> bayes;// = new BayesClassifier<String, String>();
 
 	public static void main(String[] args) throws IOException {
 		
-		readDictionaryFile();
-		RunNaiveBayesClassifier.readReviewsFile();
+		mostFrequentWords=null;
+		
+		System.out.print("bag of words only using all terms ");
+		trainOnBagOfWordsOnly();
+		
+		System.out.print("negated only using all terms ");
+		trainOnNegatedOnly();
+		
+		System.out.print("without NE only using all terms ");
+		trainOnWithoutNEOnly();
+		
+		System.out.println();
+		
+		//run different experiments
+		for(int i=1000; i<=5000; i=i+1000){
+			
+					
+			System.out.print("bag of words only using top "+i+" most frequent terms ");
+			readDictionaryFile("small.dictionary."+i);
+			trainOnBagOfWordsOnly();
+			
+			System.out.print("negated only using top "+i+" most frequent terms ");
+			readDictionaryFile("small.dictionary.negated."+i);
+			trainOnNegatedOnly();
+			
+			System.out.print("without NE only using top "+i+" most frequent terms ");
+			readDictionaryFile("small.dictionary.withoutNE."+i);
+			trainOnWithoutNEOnly();
+			
+			System.out.println();
+		}
 		
 	}
 
@@ -81,7 +88,9 @@ public class RunNaiveBayesClassifier {
 	 * 
 	 * @throws IOException
 	 */
-	public static void readReviewsFile() throws IOException{
+	public static void trainOnBagOfWordsOnly() throws IOException{
+		
+		bayes = new BayesClassifier<String, String>();
 
 		BufferedReader br = new BufferedReader(new FileReader("movie.reviews"));
 		String line = br.readLine();
@@ -90,23 +99,33 @@ public class RunNaiveBayesClassifier {
 		int counter = 0;
 
 		while (line != null) {		
+			
+			String[] tokens;
+			
+			//if mostFrequentWords is not specified
+			//train naive bayes on all encountered terms in review file
+			if(mostFrequentWords==null){
 
-			//for lower case only and negated files
-			//String[] tokens = line.toLowerCase().split("\\s+");
-
-			//for top something words
-			String[] words = line.toLowerCase().split("\\s+");
-			String releventWords = words[0] + " " + words[1] + " ";
-
-			for(int i=2;i<words.length;i++){
-				if(MostFrequentWords.contains(words[i].toLowerCase().trim())){
-					releventWords += words[i].toLowerCase()+" ";
-				}
+				//for all terms
+				tokens = line.toLowerCase().split("\\s+");
 			}
-
-			//System.out.println(releventWords);
-			String[] tokens = releventWords.split("\\s+");
-
+			
+			//train naive bayes on using specified dictionary
+			else {
+				//for top something words
+				String[] words = line.toLowerCase().split("\\s+");
+				String releventWords = words[0] + " " + words[1] + " ";
+	
+				for(int i=2;i<words.length;i++){
+					if(mostFrequentWords.contains(words[i].toLowerCase().trim())){
+						releventWords += words[i].toLowerCase()+" ";
+					}
+				}
+	
+				//System.out.println(releventWords);
+				tokens = releventWords.split("\\s+");
+			}
+			
 			if(counter<1500){
 
 				//1 = positive
@@ -152,8 +171,10 @@ public class RunNaiveBayesClassifier {
 	 * 
 	 * @throws IOException
 	 */
-	public static void readNegatedReviewsFile() throws IOException{
-
+	public static void trainOnNegatedOnly() throws IOException{
+		
+		bayes = new BayesClassifier<String, String>();
+		
 		BufferedReader br = new BufferedReader(new FileReader("movie.reviews.negated"));	
 		String line = br.readLine();
 
@@ -161,23 +182,32 @@ public class RunNaiveBayesClassifier {
 		int counter = 0;
 
 		while (line != null) {		
+			String[] tokens;
+			
+			//if mostFrequentWords is not specified
+			//train naive bayes on all encountered terms in review file
+			if(mostFrequentWords==null){
 
-			//for lower case only and negated files
-			//String[] tokens = line.toLowerCase().split("\\s+");
-
-			//for top something words
-			String[] words = line.toLowerCase().split("\\s+");
-			String releventWords = words[0] + " " + words[1] + " ";
-
-			for(int i=2;i<words.length;i++){
-				if(MostFrequentWords.contains(words[i].toLowerCase().trim())){
-					releventWords += words[i].toLowerCase()+" ";
-				}
+				//for all terms
+				tokens = line.toLowerCase().split("\\s+");
 			}
+			//train naive bayes on using specified dictionary
+			else {
 
-			//System.out.println(releventWords);
-			String[] tokens = releventWords.split("\\s+");
-
+				//for top something words
+				String[] words = line.toLowerCase().split("\\s+");
+				String releventWords = words[0] + " " + words[1] + " ";
+	
+				for(int i=2;i<words.length;i++){
+					if(mostFrequentWords.contains(words[i].toLowerCase().trim())){
+						releventWords += words[i].toLowerCase()+" ";
+					}
+				}
+	
+				//System.out.println(releventWords);
+				tokens = releventWords.split("\\s+");
+			}
+			
 			if(counter<1500){
 
 				//1 = positive
@@ -226,8 +256,10 @@ public class RunNaiveBayesClassifier {
 	 * 
 	 * @throws IOException
 	 */
-	public static void readTaggedReviewsFile() throws IOException{
-
+	public static void trainOnWithoutNEOnly() throws IOException{
+		
+		bayes = new BayesClassifier<String, String>();
+		
 		BufferedReader br = new BufferedReader(new FileReader("movie.reviews.tagged"));
 		String line = br.readLine();
 
@@ -236,24 +268,32 @@ public class RunNaiveBayesClassifier {
 
 		while (line != null) {	
 
-			//remove tagged info
-			//String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
-			//String[] tokens = strippedTags.split("\\s+");
-
-			//for top words without named entities
-			//remove tagged info
-			String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
-			String[] words = strippedTags.toLowerCase().split("\\s+");
-			String releventWords = words[0] + " " + words[1] + " ";
-
-			for(int i=2;i<words.length;i++){
-				if(MostFrequentWords.contains(words[i].toLowerCase().trim())){
-					releventWords += words[i].toLowerCase()+" ";
+			String[] tokens;
+			
+			//if mostFrequentWords is not specified
+			//train naive bayes on all encountered terms minus the tagged info in review file
+			if(mostFrequentWords==null){
+				//remove tagged info
+				String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
+				tokens = strippedTags.split("\\s+");
+			
+			//train naive bayes on using specified dictionary
+			}else{
+				//for top words without named entities
+				//remove tagged info
+				String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
+				String[] words = strippedTags.toLowerCase().split("\\s+");
+				String releventWords = words[0] + " " + words[1] + " ";
+	
+				for(int i=2;i<words.length;i++){
+					if(mostFrequentWords.contains(words[i].toLowerCase().trim())){
+						releventWords += words[i].toLowerCase()+" ";
+					}
 				}
+				//System.out.println(releventWords);
+				tokens = releventWords.split("\\s+");
 			}
-			//System.out.println(releventWords);
-			String[] tokens = releventWords.split("\\s+");
-
+			
 			if(counter<1500){
 
 				//1 = positive
@@ -302,14 +342,16 @@ public class RunNaiveBayesClassifier {
 	 * 
 	 * @throws IOException
 	 */
-	public static void readDictionaryFile() throws IOException{
-
-		BufferedReader br = new BufferedReader(new FileReader(DICTIONARY_FILE_NAME));	
+	public static void readDictionaryFile(String fileName) throws IOException{
+		
+		mostFrequentWords = new ArrayList<String>();
+		
+		BufferedReader br = new BufferedReader(new FileReader(fileName));	
 
 		String line = br.readLine();
 		while (line != null) {	
 
-			MostFrequentWords.add(line.trim());
+			mostFrequentWords.add(line.trim());
 			line = br.readLine();
 		}
 		br.close();
