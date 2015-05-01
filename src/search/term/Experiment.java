@@ -104,7 +104,7 @@ public class Experiment {
 		double precision =0.0;
 		double map = 0.0;
 		float correct=0;
-		int k = 10;
+		int k = 3;
 		
 		for(String q : queries){
 					

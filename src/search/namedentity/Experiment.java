@@ -1,6 +1,5 @@
 package search.namedentity;
 
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -9,16 +8,13 @@ import java.util.Arrays;
 
 import de.daslaboratorium.machinelearning.classifier.BayesClassifier;
 import de.daslaboratorium.machinelearning.classifier.Classifier;
-import search.data.namedentity.*;
-import search.data.namedentity.MovieReviewReader.*;
-import search.data.term.MovieReviewReader;
-import search.evaluation.namedentity.BasicQueryReader;
+import search.data.namedentity.MovieReviewReader;
 import search.evaluation.namedentity.Evaluator;
-import search.term.ImprovedTokenizer;
-import search.term.Index;
-import search.term.RunQueries;
-import search.term.TokenProcessor;
-import sentiment.RunNaiveBayesClassifier;
+import search.namedentity.ImprovedTokenizer;
+import search.namedentity.Index;
+import search.namedentity.RunQueries;
+import search.namedentity.TokenProcessor;
+
 
 /*
 The MIT License (MIT)
@@ -108,7 +104,7 @@ public class Experiment {
 		double precision =0.0;
 		double map = 0.0;
 		float correct=0;
-		int k = 10;
+		int k = 3;
 		
 		for(String q : queries){
 					
@@ -265,6 +261,7 @@ public class Experiment {
 			queries.add(line.trim());
 			line = br.readLine();
 		}
+		
 		br.close();
 
 	}
