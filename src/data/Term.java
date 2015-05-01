@@ -3,7 +3,7 @@ package data;
 public class Term {
 	private int frequency;
 	private String description;
-	
+
 	public Term(String description, int frequency){
 		this.description = description;
 		this.frequency = frequency;

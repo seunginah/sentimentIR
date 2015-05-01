@@ -3,6 +3,7 @@ package data;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,9 +33,13 @@ public class ReviewsReader {
 	 * @throws IOException
 	 */
 	public ReviewsReader() throws IOException{
-		
+
 		//remove previously created output file
 		Path path = FileSystems.getDefault().getPath(Paths.get("").toAbsolutePath().toString(), OUTPUT_FILE_ALL);
+		Files.deleteIfExists(path);
+
+		//remove previously created output file
+		path = FileSystems.getDefault().getPath(Paths.get("").toAbsolutePath().toString(), OUTPUT_FILE_NEGATED);
 		Files.deleteIfExists(path);
 
 	}
@@ -43,8 +48,8 @@ public class ReviewsReader {
 	 * 
 	 * @throws IOException
 	 */
-	public void readReviewDataFiles() throws IOException{
-		
+	public void createFileFromReviews(boolean negated) throws IOException{
+
 		int reviewID = 0;
 		for(int i = 0; i < (NUMBER_OF_REVIEWS/2); i++){
 
@@ -56,8 +61,13 @@ public class ReviewsReader {
 			for (File f : filesNeg) {
 				if(f.getName().startsWith(i+"_"))
 				{   
-					//readFile(f, reviewID, 0);
-					readFileNegation(f, reviewID, 0);
+					//
+					if(negated){
+						readFileNegation(f, reviewID, 0);
+					}
+					else{
+						readFile(f, reviewID, 0);
+					}
 					reviewID++;
 				}
 			}
@@ -65,17 +75,18 @@ public class ReviewsReader {
 			for (File f : filesPos) {
 				if(f.getName().startsWith(i+"_"))
 				{   
-					//readFile(f,reviewID, 1);
-					readFileNegation(f, reviewID, 1);
+					if(negated){
+						readFileNegation(f, reviewID, 1);
+					}
+					else{
+						readFile(f, reviewID, 1);
+					}
 					reviewID++;
 				}
 			}
 
 		}
-		
-		System.out.println("total number terms: " + bigDictionary.size());
-		//makeSmallerDictionary(2500);
-		//printTopTerms(200);
+
 	}
 
 	/**
@@ -90,25 +101,10 @@ public class ReviewsReader {
 		String line;
 
 		while ((line = br.readLine()) != null) {
-			//words in a line
-			String[] words = line.split(" ") ;
 
-			//put each new word in the big dictionary and keep track of frequency of words
-			for(int i = 1 ; i < words.length ; i++){					
-
-				String lowerCaseWord = words[i].toLowerCase();
-				Integer count = bigDictionary.get(lowerCaseWord);
-
-				if(count == null){				 		 
-					bigDictionary.put(lowerCaseWord, 1);
-				}else{
-					bigDictionary.put(lowerCaseWord, count + 1);
-				}
-			}
-			
 			writeFile(OUTPUT_FILE_ALL, reviewID + " " + sentiment + " " + line);
 		}
-		
+
 		br.close();
 
 	}
@@ -119,14 +115,14 @@ public class ReviewsReader {
 	 * @throws IOException
 	 */
 	private static void writeFile(String fileName, String line) throws IOException {
-		
+
 		PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(fileName, true)));
 		out.println(line);
 		out.close();
-		
+
 	}
-	
-	private static void printTopTerms(int number){
+
+	public static void printTopTerms(int number){
 		int count = 0;
 		for (Term entry : smallDictionary)
 		{
@@ -138,15 +134,12 @@ public class ReviewsReader {
 		}
 	}
 
-	private static void makeSmallerDictionary(int numWords){
-
+	public static void makeSmallerDictionary(int numWords) throws IOException{
 
 		for (Entry<String, Integer> entry : bigDictionary.entrySet())
 		{
-			//	    System.out.println(entry.getKey() + "/" + entry.getValue());
-			//if(!stopWords.contains(entry.getKey())){
-				termList.add(new Term(entry.getKey(), entry.getValue()));
-			//}
+			termList.add(new Term(entry.getKey(), entry.getValue()));
+
 		}
 
 		termList.sort(frequencyComparator);
@@ -156,9 +149,12 @@ public class ReviewsReader {
 			smallDictionary.add(termList.get(i)) ;
 		}
 
-
+		for (Term entry : smallDictionary)
+		{
+			writeFile("smallerdictionary"+numWords +".txt", entry.getDescription());
+		}
 	}
-	
+
 	/**
 	 * Comparator 
 	 */
@@ -168,32 +164,32 @@ public class ReviewsReader {
 			return (int) (t1.getFrequency() - t2.getFrequency());
 		}
 	};
-	
+
 	private static void readFileNegation(File f, int reviewID, int sentiment) throws IOException {
 
 		BufferedReader br = new BufferedReader(new FileReader(f));
 
 		String line = "";
 		boolean negationDetected=false;
-		
+
 		while ((line = br.readLine()) != null) {
 
 			line = line.replaceAll("[,]", " , ");
 			line = line.replaceAll("[.]", " . ");
 			line = line.replaceAll("[!]", " ! ");
 			line = line.replaceAll("[?]", " ? ");
-			
+
 			String[] terms = line.split(" ");
 
 			String cleanedLine="";
 
 			for(int i=0;i<terms.length;i++){		
-				
+
 				String term = terms[i].toLowerCase().trim();
 
 				//if a negation is detected prefix NOT_ to words until 
 				if(negationDetected==true && !term.equals(",") && !term.equals(".") && !term.equals("!") && !term.equals("?") && !stopWords.contains(term)){
-					
+
 					term = "NOT_" + term;
 
 				}
@@ -210,11 +206,26 @@ public class ReviewsReader {
 						term.equals("not")|| term.equals("no") || term.equals("won't") ||
 						term.equals("wasn't") || term.equals("doesn't") || term.equals("can't")||
 						term.equals("never") ||term.equals("ain't") ){
-					
+
 					negationDetected=true;
 				}
 
 
+			}
+
+			String[] words = cleanedLine.split(" ");
+
+			//put each new word in the big dictionary and keep track of frequency of words
+			for(int i = 1 ; i < words.length ; i++){					
+
+				String lowerCaseWord = words[i].toLowerCase();
+				Integer count = bigDictionary.get(lowerCaseWord);
+
+				if(count == null){				 		 
+					bigDictionary.put(lowerCaseWord, 1);
+				}else{
+					bigDictionary.put(lowerCaseWord, count + 1);
+				}
 			}
 
 			writeFile(OUTPUT_FILE_NEGATED, reviewID + " " + sentiment + " " + cleanedLine);
@@ -223,6 +234,127 @@ public class ReviewsReader {
 		br.close();
 
 	}
+
+	public void createDictionaryWithoutNE(int numWords) throws IOException{
+
+		BufferedReader br = new BufferedReader(new FileReader("movie.reviews.tagged"));
+
+		String line = "";
+
+		while ((line = br.readLine()) != null) {			
+			String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
+			String[] tokens = strippedTags.split("\\s+");
+
+			for(int i = 2 ; i < tokens.length ; i++){					
+
+				String lowerCaseWord = tokens[i].toLowerCase();
+				Integer count = bigDictionary.get(lowerCaseWord);
+
+				if(count == null){				 		 
+					bigDictionary.put(lowerCaseWord, 1);
+				}else{
+					bigDictionary.put(lowerCaseWord, count + 1);
+				}
+			}
+		}
+
+		makeSmallerDictionary(numWords);
+		
+		//remove dictionary file if already exits
+		Path path = FileSystems.getDefault().getPath(Paths.get("").toAbsolutePath().toString(), "smallerdictionarywithoutNE" + numWords + ".txt");
+		Files.deleteIfExists(path);
+
+		//write dictionary to text file
+		for (Term entry : smallDictionary)
+		{
+			writeFile("smallerdictionarywithoutNE" + numWords + ".txt", entry.getDescription());
+		}
+
+		br.close();
+	}
+
+	public void createDictionaryNegated(int numWords) throws IOException{
+
+		BufferedReader br = new BufferedReader(new FileReader("movie.reviews.negated"));
+
+		String line = "";
+
+		while ((line = br.readLine()) != null) {	
+
+			String[] tokens = line.split("\\s+");
+
+			for(int i = 2 ; i < tokens.length ; i++){				
+
+				String lowerCaseWord = tokens[i].toLowerCase();
+				Integer count = bigDictionary.get(lowerCaseWord);
+
+				if(count == null){				 		 
+					bigDictionary.put(lowerCaseWord, 1);
+				}else{
+					bigDictionary.put(lowerCaseWord, count + 1);
+				}
+			}
+		}
+
+		makeSmallerDictionary(numWords);
+		
+		//remove dictionary file if already exits
+		Path path = FileSystems.getDefault().getPath(Paths.get("").toAbsolutePath().toString(), "smallerdictionarynegated" + numWords + ".txt");
+		Files.deleteIfExists(path);
+		
+		//write dictionary to text file
+		for (Term entry : smallDictionary)
+		{
+			writeFile("smallerdictionarynegated" + numWords + ".txt", entry.getDescription());
+		}
+
+		br.close();
+	}
+
+	/**
+	 * Creates a dictionary of words
+	 * 
+	 * @param numWords
+	 * @throws IOException
+	 */
+	public static void createDictionary(int numWords) throws IOException{
+
+		BufferedReader br = new BufferedReader(new FileReader("movie.reviews"));
+
+		String line = "";
+
+		while ((line = br.readLine()) != null) {	
+
+			String[] tokens = line.split("\\s+");
+
+			for(int i = 2 ; i < tokens.length ; i++){				
+
+				String lowerCaseWord = tokens[i].toLowerCase();
+				Integer count = bigDictionary.get(lowerCaseWord);
+
+				if(count == null){				 		 
+					bigDictionary.put(lowerCaseWord, 1);
+				}else{
+					bigDictionary.put(lowerCaseWord, count + 1);
+				}
+			}
+		}
+
+		makeSmallerDictionary(numWords);
+
+		//remove dictionary file if already exits
+		Path path = FileSystems.getDefault().getPath(Paths.get("").toAbsolutePath().toString(), "smallerdictionary" + numWords + ".txt");
+		Files.deleteIfExists(path);
+		
+		//write dictionary to text file
+		for (Term entry : smallDictionary)
+		{
+			writeFile("smallerdictionary" + numWords + ".txt", entry.getDescription());
+		}
+
+		br.close();
+	}
+
 
 
 }
