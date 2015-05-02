@@ -61,7 +61,8 @@ public class RunNaiveBayesClassifier {
 		System.out.print("without NE only using all terms ");
 		trainOnWithoutNEOnly();
 		
-		System.out.println();
+		System.out.println("without NE, using LSA output\n please note that for all numbers of topics, the result is the same");
+		trainOnWithoutNEAndLSA();
 		
 		//run different experiments
 		for(int i=1000; i<=5000; i=i+1000){
@@ -270,6 +271,7 @@ public class RunNaiveBayesClassifier {
 
 			String[] tokens;
 			
+			
 			//if mostFrequentWords is not specified
 			//train naive bayes on all encountered terms minus the tagged info in review file
 			if(mostFrequentWords==null){
@@ -337,6 +339,106 @@ public class RunNaiveBayesClassifier {
 		br.close();
 
 	}
+	
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	public static void trainOnWithoutNEAndLSA() throws IOException{
+		SentimentOrientation so = new SentimentOrientation();
+		//String[]two = so.getTwo();
+		//String[]two = so.getTen();
+		String[]two = so.getFif();
+		
+		bayes = new BayesClassifier<String, String>();
+		
+		BufferedReader br = new BufferedReader(new FileReader("movie.reviews.tagged"));
+		String line = br.readLine();
+
+		float correct=0;
+		int counter = 0;
+
+		while (line != null) {	
+
+			String[] tokens;
+			if (counter <1500){
+			String soOutput = two[counter];
+			
+			line = line + " " + soOutput;
+			}
+			//if mostFrequentWords is not specified
+			//train naive bayes on all encountered terms minus the tagged info in review file
+			if(mostFrequentWords==null){
+				//remove tagged info
+				String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
+				tokens = strippedTags.split("\\s+");
+			
+			//train naive bayes on using specified dictionary
+			}else{
+				//for top words without named entities
+				//remove tagged info
+				String strippedTags = line.toLowerCase().replaceAll("<.*?>.*?</.*?>|<.*?/>", "");
+				String[] words = strippedTags.toLowerCase().split("\\s+");
+				String releventWords = words[0] + " " + words[1] + " ";
+	
+				for(int i=2;i<words.length;i++){
+					if(mostFrequentWords.contains(words[i].toLowerCase().trim())){
+						releventWords += words[i].toLowerCase()+" ";
+					}
+				}
+				//System.out.println(releventWords);
+				tokens = releventWords.split("\\s+");
+			}
+			
+			//tokens[tokens.length] = soOutput;
+			
+			if(counter<1500){
+
+				//1 = positive
+				//0 = negative
+				if(tokens[1].equals("1")){
+
+					bayes.learn("positive", Arrays.asList(tokens));
+
+				} else {
+
+					bayes.learn("negative", Arrays.asList(tokens));
+				}
+			}
+
+			counter++;
+
+			if(counter>=1500){
+
+				//System.out.println();
+				//System.out.println(line);
+
+				String prediction = bayes.classify(Arrays.asList(tokens)).getCategory();
+				//System.out.println("predicted: " + prediction);
+				//System.out.println();
+
+				if(prediction.equals("negative")&&tokens[1].equals("0") || prediction.equals("positive")&&tokens[1].equals("1")){
+					correct++;
+				}
+			}
+
+
+			line = br.readLine();
+
+			((BayesClassifier<String, String>) bayes).classifyDetailed(Arrays.asList(tokens));
+		}
+
+		bayes.setMemoryCapacity(2000); 
+
+		System.out.println("accurracy: " + (float)(correct/(float)500));
+
+		br.close();
+
+	}
+	
+	
+	
 
 	/**
 	 * 
